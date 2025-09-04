@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Adulteration Analyzer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 antialiased p-4">
+
+    <!-- Main Container -->
+    <div class="max-w-xl mx-auto py-8">
+        <header class="text-center mb-10">
+            <div class="flex flex-col sm:flex-row items-center justify-center sm:justify-start mb-4">
+                <!-- University Logo and Info -->
+                <div class="flex-shrink-0 mb-4 sm:mb-0 sm:mr-4 text-center">
+                    <img src="REC_Logo_Color_PNG_RGB.jpg" alt="Rajalakshmi Engineering College Logo" class="w-24 h-auto mx-auto mb-2">
+                    <p class="text-xs text-gray-400">Department of Food Technology</p>
+                </div>
+                <!-- Title and Subtitle -->
+                <div class="text-center sm:text-left">
+                    <h1 class="text-3xl sm:text-4xl font-extrabold text-white">Mobile Adulteration Analyzer</h1>
+                    <p class="text-gray-400 mt-2">Heavy Metal Detection System</p>
+                    <p class="text-gray-500 mt-2 text-sm">Developed By Tharini R.K, Varsha K & Tejesvi TT.</p>
+                    <p class="text-gray-500 text-sm">Mentor: Mr. R. ANAND, Assistant Professor, Food Tech, REC.</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Analyzer Status Section -->
+        <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Analyzer Status</h2>
+            <div id="connectionStatus" class="flex items-center gap-3">
+                <span class="inline-block w-3 h-3 rounded-full bg-red-500"></span>
+                <span class="text-gray-300 font-semibold">Disconnected</span>
+            </div>
+            <!--
+                In a real application, this section would be updated by a script
+                that attempts to establish a connection to the analyzer device.
+                The visual indicator and text would change based on the connection state.
+            -->
+            <div class="mt-4 text-sm text-gray-500">
+                This interface can be connected to the analyzer via a wired connection (e.g., USB-C).
+                In a real-world scenario, you would use the Web Serial API or a similar method
+                to read data directly from the device.
+            </div>
+        </div>
+
+        <!-- Action Button Section -->
+        <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Actions</h2>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button id="standardButton" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                    Read Standard
+                </button>
+                <button id="sampleButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                    Read Sample
+                </button>
+            </div>
+            <p id="loadingIndicator" class="mt-4 text-center text-sm text-gray-400 hidden">
+                Reading in progress...
+            </p>
+        </div>
+
+        <!-- Results Display Section -->
+        <div class="bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Measurement Results</h2>
+            <div class="space-y-4">
+                <!-- Absorbance -->
+                <div class="bg-gray-700 rounded-lg p-4 flex justify-between items-center">
+                    <span class="text-gray-400">Absorbance (510nm)</span>
+                    <span id="absorbanceValue" class="text-lg font-bold text-gray-200">--</span>
+                </div>
+                <!-- Cadmium Concentration -->
+                <div class="bg-gray-700 rounded-lg p-4 flex justify-between items-center">
+                    <span class="text-gray-400">Cadmium (Cd)</span>
+                    <span id="cadmiumValue" class="text-lg font-bold text-gray-200">--</span>
+                </div>
+                <!-- Lead Concentration -->
+                <div class="bg-gray-700 rounded-lg p-4 flex justify-between items-center">
+                    <span class="text-gray-400">Lead (Pb)</span>
+                    <span id="leadValue" class="text-lg font-bold text-gray-200">--</span>
+                </div>
+            </div>
+            <!-- Overall Status -->
+            <div class="mt-6 p-4 rounded-lg text-center" id="statusBox">
+                <span id="overallStatus" class="font-bold text-lg">Awaiting Reading...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript for functionality -->
+    <script>
+        window.onload = function() {
+            const standardButton = document.getElementById('standardButton');
+            const sampleButton = document.getElementById('sampleButton');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const connectionStatus = document.getElementById('connectionStatus');
+            const absorbanceValue = document.getElementById('absorbanceValue');
+            const cadmiumValue = document.getElementById('cadmiumValue');
+            const leadValue = document.getElementById('leadValue');
+            const overallStatus = document.getElementById('overallStatus');
+            const statusBox = document.getElementById('statusBox');
+
+            // Simulate initial connection success after a short delay
+            setTimeout(() => {
+                connectionStatus.innerHTML = '<span class="inline-block w-3 h-3 rounded-full bg-green-500"></span><span class="text-gray-300 font-semibold">Connected</span>';
+            }, 1000);
+
+            // Function to handle reading and updating the UI
+            function performReading(isStandard) {
+                // Show loading indicator and disable both buttons
+                loadingIndicator.classList.remove('hidden');
+                standardButton.disabled = true;
+                sampleButton.disabled = true;
+
+                // Simulate an asynchronous reading process
+                setTimeout(() => {
+                    let abs, cd, pb;
+
+                    if (isStandard) {
+                        // Fixed values for standard reading
+                        abs = (0.05 + Math.random() * 0.01).toFixed(3);
+                        cd = (0.005 + Math.random() * 0.001).toFixed(3);
+                        pb = (0.008 + Math.random() * 0.001).toFixed(3);
+
+                        overallStatus.textContent = "Standard Reading Complete";
+                        statusBox.classList.remove('bg-red-800', 'bg-green-800');
+                        statusBox.classList.add('bg-gray-700');
+                    } else {
+                        // Random values for sample reading
+                        abs = (Math.random() * 0.5).toFixed(3);
+                        cd = (Math.random() * 0.1).toFixed(3);
+                        pb = (Math.random() * 0.1).toFixed(3);
+
+                        // Check for adulteration based on threshold
+                        const isAdulterated = (parseFloat(cd) > 0.05) || (parseFloat(pb) > 0.05);
+                        if (isAdulterated) {
+                            overallStatus.textContent = "Adulteration Detected";
+                            statusBox.classList.remove('bg-gray-700', 'bg-green-800');
+                            statusBox.classList.add('bg-red-800');
+                        } else {
+                            overallStatus.textContent = "Safe to Consume";
+                            statusBox.classList.remove('bg-gray-700', 'bg-red-800');
+                            statusBox.classList.add('bg-green-800');
+                        }
+                    }
+
+                    // Update the values on the page
+                    absorbanceValue.textContent = `${abs} Abs`;
+                    cadmiumValue.textContent = `${cd} ppm`;
+                    leadValue.textContent = `${pb} ppm`;
+
+                    // Hide loading indicator and re-enable buttons
+                    loadingIndicator.classList.add('hidden');
+                    standardButton.disabled = false;
+                    sampleButton.disabled = false;
+                }, 2000); // Simulate a 2-second reading time
+            }
+
+            standardButton.addEventListener('click', () => {
+                performReading(true); // true indicates it's a standard reading
+            });
+
+            sampleButton.addEventListener('click', () => {
+                performReading(false); // false indicates it's a sample reading
+            });
+        };
+    </script>
+</body>
+</html>
